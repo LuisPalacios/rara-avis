@@ -55,9 +55,8 @@ This was the initial prompt that I used. The game worked with some issues on the
 ## Controls
 
 | Action | Input |
-|--------|-------|
+| ------ | ----- |
 | Flap / Start | `SPACE` or `Mouse Click` |
-| Pause / Resume | `P` |
 
 ## Installation & Running
 
