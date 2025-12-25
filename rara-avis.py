@@ -160,6 +160,35 @@ class Button:
             return self.rect.collidepoint(pos)
         return False
 
+class Particle:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.vx = random.uniform(-1, -0.5)
+        self.vy = random.uniform(-1, 1)
+        self.lifetime = random.randint(20, 40)
+        self.size = random.randint(3, 6)
+        self.color = random.choice([
+            (255, 255, 100),  # Light yellow
+            (255, 220, 50),   # Golden
+            (255, 200, 0),    # Yellow
+            (255, 180, 50),   # Orange-yellow
+        ])
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.lifetime -= 1
+        self.size = max(1, self.size - 0.1)
+
+    def draw(self):
+        if self.lifetime > 0:
+            alpha = int(255 * (self.lifetime / 40))
+            pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), int(self.size))
+
+    def is_alive(self):
+        return self.lifetime > 0
+
 class Cloud:
     def __init__(self):
         self.x = WIDTH + random.randint(0, 300)
@@ -232,6 +261,7 @@ def draw_start_screen():
     instructions = [
         "Press SPACE or CLICK to flap",
         "Avoid pipes and don't hit the ground",
+        "Press P to pause",
         "Press SPACE or ENTER to start"
     ]
 
@@ -248,17 +278,30 @@ def draw_start_screen():
         (WIDTH//2 + 40, HEIGHT//3 + 18)
     ])
 
+def draw_paused():
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 128))
+    screen.blit(overlay, (0, 0))
+
+    paused_text = font_large.render("PAUSED", True, TEXT_COLOR)
+    screen.blit(paused_text, (WIDTH//2 - paused_text.get_width()//2, HEIGHT//2 - 50))
+
+    resume_text = font_small.render("Press P to resume", True, TEXT_COLOR)
+    screen.blit(resume_text, (WIDTH//2 - resume_text.get_width()//2, HEIGHT//2 + 20))
+
 def main():
     global clouds
 
     clock = pygame.time.Clock()
     bird = Bird()
     pipes = []
+    particles = []
     score = 0
     high_score = 0
     last_pipe = pygame.time.get_ticks()
-    game_state = "start"  # start, playing, game_over
+    game_state = "start"  # start, playing, paused, game_over
     clouds = [Cloud() for _ in range(5)]
+    paused = False
 
     # Create buttons
     restart_button = Button(WIDTH//2 - 100, HEIGHT//2 + 100, 200, 50, "RESTART")
@@ -283,8 +326,17 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         bird.flap()
+                    if event.key == pygame.K_p:
+                        paused = True
+                        game_state = "paused"
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     bird.flap()
+
+            elif game_state == "paused":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_p:
+                        paused = False
+                        game_state = "playing"
 
             elif game_state == "game_over":
                 restart_button.check_hover(mouse_pos)
@@ -295,6 +347,7 @@ def main():
                     # Reset game
                     bird = Bird()
                     pipes = []
+                    particles = []
                     score = 0
                     last_pipe = current_time
                     game_state = "playing"
@@ -302,6 +355,16 @@ def main():
         # Update game objects
         if game_state == "playing":
             bird.update()
+
+            # Spawn particles behind the bird
+            if random.random() < 0.5:  # 50% chance each frame
+                particles.append(Particle(bird.x, bird.y + BIRD_HEIGHT // 2))
+
+            # Update particles
+            for particle in particles[:]:
+                particle.update()
+                if not particle.is_alive():
+                    particles.remove(particle)
 
             # Generate new pipes
             if current_time - last_pipe > PIPE_FREQUENCY:
@@ -338,6 +401,10 @@ def main():
         # Drawing
         draw_background()
 
+        # Draw particles (behind bird)
+        for particle in particles:
+            particle.draw()
+
         # Draw pipes
         for pipe in pipes:
             pipe.draw()
@@ -349,12 +416,14 @@ def main():
         bird.draw()
 
         # Draw score
-        if game_state == "playing" or game_state == "game_over":
+        if game_state == "playing" or game_state == "game_over" or game_state == "paused":
             draw_score(score, high_score)
 
         # Draw screens
         if game_state == "start":
             draw_start_screen()
+        elif game_state == "paused":
+            draw_paused()
         elif game_state == "game_over":
             draw_game_over(score, high_score, restart_button)
 

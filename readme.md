@@ -75,19 +75,19 @@ brew install python@3.13
 ### Setup
 
 ```bash
-cd ~/tmp/flappybird
+git clone https://github.com/LuisPalacios/rara-avis
+cd rara-avis
 /opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip
 python -m pip install -U pygame
 ```
 
 ### Run
 
 ```bash
-cd ~/tmp/flappybird
+cd rara-avis
 source .venv/bin/activate
-python flappybird.py
+python rara-avis.py
 ```
 
 Game control:
@@ -95,6 +95,7 @@ Game control:
 | Action | Input |
 | ------ | ----- |
 | Flap / Start | `SPACE` or `Mouse Click` |
+| Pause | `P` |
 
 ## License
 
