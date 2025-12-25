@@ -6,404 +6,360 @@ import math
 # Initialize pygame
 pygame.init()
 
-# Constants
+# Screen dimensions
 WIDTH, HEIGHT = 800, 600
-FPS = 60
-GROUND_HEIGHT = 100
-GRAVITY = 0.5
-JUMP_STRENGTH = -8
-PIPE_SPEED = 3
-PIPE_GAP = 200
-PIPE_FREQUENCY = 1800  # milliseconds
-PIPE_WIDTH = 80
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Rara Avis - Flappy Bird Clone")
 
 # Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BLUE = (135, 206, 235)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
-BROWN = (139, 69, 19)
 SKY_BLUE = (135, 206, 235)
+GROUND_COLOR = (101, 67, 33)
+PIPE_GREEN = (94, 185, 94)
+BIRD_YELLOW = (255, 255, 0)
+BIRD_ORANGE = (255, 165, 0)
+TEXT_COLOR = (255, 255, 255)
+BUTTON_COLOR = (70, 130, 180)
+BUTTON_HOVER = (100, 149, 237)
+RED = (220, 20, 60)
+GREEN = (50, 205, 50)
 
-class Player:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+# Game variables
+FPS = 60
+GRAVITY = 0.5
+FLAP_STRENGTH = -8
+PIPE_SPEED = 3
+PIPE_GAP = 180
+PIPE_FREQUENCY = 1800  # milliseconds
+GROUND_HEIGHT = 100
+BIRD_WIDTH, BIRD_HEIGHT = 40, 30
+PIPE_WIDTH = 70
+
+# Font setup
+font_large = pygame.font.SysFont("Arial", 48, bold=True)
+font_medium = pygame.font.SysFont("Arial", 36)
+font_small = pygame.font.SysFont("Arial", 24)
+
+class Bird:
+    def __init__(self):
+        self.x = WIDTH // 3
+        self.y = HEIGHT // 2
         self.velocity = 0
-        self.radius = 20
         self.alive = True
-        self.rotation = 0
+        self.flap_count = 0
+        self.wing_angle = 0
+        self.wing_direction = 1
 
-    def jump(self):
-        self.velocity = JUMP_STRENGTH
+    def flap(self):
+        if self.alive:
+            self.velocity = FLAP_STRENGTH
+            self.flap_count += 1
 
     def update(self):
         # Apply gravity
         self.velocity += GRAVITY
         self.y += self.velocity
 
-        # Rotate based on velocity
-        self.rotation = max(-30, min(self.velocity * 3, 90))
+        # Update wing animation
+        self.wing_angle += 0.2 * self.wing_direction
+        if abs(self.wing_angle) > 0.5:
+            self.wing_direction *= -1
 
-        # Keep player on screen
-        if self.y < self.radius:
-            self.y = self.radius
-            self.velocity = 0
-
-        if self.y > HEIGHT - GROUND_HEIGHT - self.radius:
-            self.y = HEIGHT - GROUND_HEIGHT - self.radius
-            self.velocity = 0
+        # Check if bird hits the ground or ceiling
+        if self.y >= HEIGHT - GROUND_HEIGHT - BIRD_HEIGHT:
+            self.y = HEIGHT - GROUND_HEIGHT - BIRD_HEIGHT
             self.alive = False
+        if self.y <= 0:
+            self.y = 0
+            self.velocity = 0
 
-    def draw(self, screen):
-        # Draw player as a circle with rotation effect
-        surface = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(surface, YELLOW, (self.radius, self.radius), self.radius)
-        pygame.draw.circle(surface, BLACK, (self.radius - 5, self.radius - 5), 5)
-        pygame.draw.circle(surface, BLACK, (self.radius + 5, self.radius - 5), 5)
-        rotated = pygame.transform.rotate(surface, self.rotation)
-        rect = rotated.get_rect(center=(self.x, self.y))
-        screen.blit(rotated, rect)
+    def draw(self):
+        # Draw bird body
+        pygame.draw.ellipse(screen, BIRD_YELLOW, (self.x, self.y, BIRD_WIDTH, BIRD_HEIGHT))
 
-    def get_rect(self):
-        return pygame.Rect(self.x - self.radius, self.y - self.radius,
-                          self.radius * 2, self.radius * 2)
+        # Draw bird eye
+        pygame.draw.circle(screen, (0, 0, 0), (self.x + BIRD_WIDTH - 10, self.y + 10), 5)
+        pygame.draw.circle(screen, (255, 255, 255), (self.x + BIRD_WIDTH - 12, self.y + 8), 2)
+
+        # Draw bird beak
+        beak_points = [
+            (self.x + BIRD_WIDTH, self.y + 15),
+            (self.x + BIRD_WIDTH + 10, self.y + 12),
+            (self.x + BIRD_WIDTH + 10, self.y + 18)
+        ]
+        pygame.draw.polygon(screen, BIRD_ORANGE, beak_points)
+
+        # Draw wing
+        wing_points = [
+            (self.x + 10, self.y + 15),
+            (self.x + 20, self.y + 15 + self.wing_angle * 10),
+            (self.x + 30, self.y + 15)
+        ]
+        pygame.draw.polygon(screen, (255, 200, 0), wing_points)
+
+    def get_mask(self):
+        # Simple collision mask for bird
+        return pygame.Rect(self.x, self.y, BIRD_WIDTH, BIRD_HEIGHT)
 
 class Pipe:
-    def __init__(self, x):
-        self.x = x
-        self.width = PIPE_WIDTH
-        self.gap_y = random.randint(150, HEIGHT - GROUND_HEIGHT - 150)
+    def __init__(self):
+        self.x = WIDTH
+        self.height = random.randint(100, HEIGHT - GROUND_HEIGHT - PIPE_GAP - 100)
+        self.top_pipe = pygame.Rect(self.x, 0, PIPE_WIDTH, self.height)
+        self.bottom_pipe = pygame.Rect(self.x, self.height + PIPE_GAP, PIPE_WIDTH, HEIGHT - self.height - PIPE_GAP)
         self.passed = False
-        self.top_height = self.gap_y - PIPE_GAP // 2
-        self.bottom_y = self.gap_y + PIPE_GAP // 2
+        self.scored = False
 
     def update(self):
         self.x -= PIPE_SPEED
+        self.top_pipe.x = self.x
+        self.bottom_pipe.x = self.x
 
-    def draw(self, screen):
+    def draw(self):
         # Draw top pipe
-        pygame.draw.rect(screen, GREEN, (self.x, 0, self.width, self.top_height))
-        pygame.draw.rect(screen, (0, 100, 0), (self.x, self.top_height - 20, self.width, 20))
+        pygame.draw.rect(screen, PIPE_GREEN, self.top_pipe)
+        pygame.draw.rect(screen, (50, 120, 50), self.top_pipe, 3)
+
+        # Draw pipe cap
+        cap_rect = pygame.Rect(self.x - 5, self.height - 20, PIPE_WIDTH + 10, 20)
+        pygame.draw.rect(screen, PIPE_GREEN, cap_rect)
+        pygame.draw.rect(screen, (50, 120, 50), cap_rect, 3)
 
         # Draw bottom pipe
-        pygame.draw.rect(screen, GREEN, (self.x, self.bottom_y, self.width, HEIGHT - self.bottom_y))
-        pygame.draw.rect(screen, (0, 100, 0), (self.x, self.bottom_y, self.width, 20))
+        pygame.draw.rect(screen, PIPE_GREEN, self.bottom_pipe)
+        pygame.draw.rect(screen, (50, 120, 50), self.bottom_pipe, 3)
 
-    def collide(self, player):
-        player_rect = player.get_rect()
+        # Draw pipe cap
+        cap_rect = pygame.Rect(self.x - 5, self.height + PIPE_GAP, PIPE_WIDTH + 10, 20)
+        pygame.draw.rect(screen, PIPE_GREEN, cap_rect)
+        pygame.draw.rect(screen, (50, 120, 50), cap_rect, 3)
 
-        # Top pipe collision
-        top_pipe_rect = pygame.Rect(self.x, 0, self.width, self.top_height)
-        # Bottom pipe collision
-        bottom_pipe_rect = pygame.Rect(self.x, self.bottom_y, self.width, HEIGHT - self.bottom_y)
+    def collide(self, bird):
+        bird_mask = bird.get_mask()
+        return bird_mask.colliderect(self.top_pipe) or bird_mask.colliderect(self.bottom_pipe)
 
-        return player_rect.colliderect(top_pipe_rect) or player_rect.colliderect(bottom_pipe_rect)
+class Button:
+    def __init__(self, x, y, width, height, text):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.hovered = False
 
-class Particle:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.velocity_x = random.uniform(-3, 3)
-        self.velocity_y = random.uniform(-3, 3)
-        self.life = 30
-        self.max_life = 30
-        self.size = random.randint(2, 5)
+    def draw(self):
+        color = BUTTON_HOVER if self.hovered else BUTTON_COLOR
+        pygame.draw.rect(screen, color, self.rect, border_radius=10)
+        pygame.draw.rect(screen, (30, 30, 30), self.rect, 3, border_radius=10)
 
-    def update(self):
-        self.x += self.velocity_x
-        self.y += self.velocity_y
-        self.life -= 1
+        text_surf = font_medium.render(self.text, True, TEXT_COLOR)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        screen.blit(text_surf, text_rect)
 
-    def is_dead(self):
-        return self.life <= 0
+    def check_hover(self, pos):
+        self.hovered = self.rect.collidepoint(pos)
 
-    def draw(self, screen):
-        alpha = int(255 * (self.life / self.max_life))
-        color = (255, 255, 0, alpha)
-        pygame.draw.circle(screen, (255, 255, 0), (int(self.x), int(self.y)), self.size)
+    def check_click(self, pos, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            return self.rect.collidepoint(pos)
+        return False
 
 class Cloud:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self):
+        self.x = WIDTH + random.randint(0, 300)
+        self.y = random.randint(50, 200)
         self.speed = random.uniform(0.5, 1.5)
+        self.size = random.randint(30, 60)
 
     def update(self):
         self.x -= self.speed
         if self.x < -100:
-            self.x = WIDTH + 100
+            self.x = WIDTH + 50
             self.y = random.randint(50, 200)
 
-    def draw(self, screen):
-        pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), 20)
-        pygame.draw.circle(screen, WHITE, (int(self.x + 15), int(self.y - 10)), 15)
-        pygame.draw.circle(screen, WHITE, (int(self.x + 30), int(self.y)), 20)
-        pygame.draw.circle(screen, WHITE, (int(self.x + 15), int(self.y + 10)), 15)
+    def draw(self):
+        pygame.draw.circle(screen, (250, 250, 250), (self.x, self.y), self.size)
+        pygame.draw.circle(screen, (250, 250, 250), (self.x + self.size*0.8, self.y - self.size*0.2), self.size*0.7)
+        pygame.draw.circle(screen, (250, 250, 250), (self.x + self.size*1.5, self.y), self.size*0.9)
 
-class Game:
-    def __init__(self):
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Rara Avis")
-        self.clock = pygame.time.Clock()
+def draw_ground():
+    pygame.draw.rect(screen, GROUND_COLOR, (0, HEIGHT - GROUND_HEIGHT, WIDTH, GROUND_HEIGHT))
 
-        # Fonts
-        self.font_large = pygame.font.SysFont(None, 72)
-        self.font_medium = pygame.font.SysFont(None, 36)
-        self.font_small = pygame.font.SysFont(None, 24)
+    # Draw grass
+    pygame.draw.rect(screen, (34, 139, 34), (0, HEIGHT - GROUND_HEIGHT, WIDTH, 20))
 
-        # Game state
-        self.state = "menu"  # menu, playing, paused, game_over
+    # Draw ground details
+    for i in range(0, WIDTH, 30):
+        pygame.draw.line(screen, (80, 50, 20), (i, HEIGHT - GROUND_HEIGHT + 10),
+                         (i + 15, HEIGHT - GROUND_HEIGHT + 10), 2)
 
-        # Game objects
-        self.player = Player(100, HEIGHT // 2)
-        self.pipes = []
-        self.particles = []
-        self.clouds = []
-        self.score = 0
-        self.high_score = 0
-        self.last_pipe_time = 0
+def draw_background():
+    # Sky
+    screen.fill(SKY_BLUE)
 
-        # Create clouds
-        for _ in range(5):
-            self.clouds.append(Cloud(random.randint(0, WIDTH), random.randint(50, 200)))
+    # Draw sun
+    pygame.draw.circle(screen, (255, 255, 200), (700, 80), 60)
+    pygame.draw.circle(screen, (255, 255, 100), (700, 80), 40)
 
-    def reset_game(self):
-        self.player = Player(100, HEIGHT // 2)
-        self.pipes = []
-        self.particles = []
-        self.score = 0
-        self.last_pipe_time = 0
+    # Draw clouds
+    for cloud in clouds:
+        cloud.draw()
 
-    def handle_events(self):
+def draw_score(score, high_score):
+    score_text = font_medium.render(f"Score: {score}", True, TEXT_COLOR)
+    screen.blit(score_text, (20, 20))
+
+    high_score_text = font_medium.render(f"High Score: {high_score}", True, TEXT_COLOR)
+    screen.blit(high_score_text, (20, 70))
+
+def draw_game_over(score, high_score, restart_button):
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+
+    game_over_text = font_large.render("GAME OVER", True, RED)
+    screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//3))
+
+    score_text = font_medium.render(f"Score: {score}", True, TEXT_COLOR)
+    screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2))
+
+    high_score_text = font_medium.render(f"High Score: {high_score}", True, TEXT_COLOR)
+    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 50))
+
+    # Draw restart button
+    restart_button.draw()
+
+def draw_start_screen():
+    title_text = font_large.render("RARA AVIS", True, (255, 215, 0))
+    screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//4))
+
+    instructions = [
+        "Press SPACE or CLICK to flap",
+        "Avoid pipes and don't hit the ground",
+        "Press SPACE or ENTER to start"
+    ]
+
+    for i, line in enumerate(instructions):
+        text = font_small.render(line, True, TEXT_COLOR)
+        screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 + i*40))
+
+    # Draw a simple bird in the start screen
+    pygame.draw.ellipse(screen, BIRD_YELLOW, (WIDTH//2 - 50, HEIGHT//3, 40, 30))
+    pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 - 10, HEIGHT//3 + 10), 5)
+    pygame.draw.polygon(screen, BIRD_ORANGE, [
+        (WIDTH//2 + 30, HEIGHT//3 + 15),
+        (WIDTH//2 + 40, HEIGHT//3 + 12),
+        (WIDTH//2 + 40, HEIGHT//3 + 18)
+    ])
+
+def main():
+    global clouds
+
+    clock = pygame.time.Clock()
+    bird = Bird()
+    pipes = []
+    score = 0
+    high_score = 0
+    last_pipe = pygame.time.get_ticks()
+    game_state = "start"  # start, playing, game_over
+    clouds = [Cloud() for _ in range(5)]
+
+    # Create buttons
+    restart_button = Button(WIDTH//2 - 100, HEIGHT//2 + 100, 200, 50, "RESTART")
+
+    # Main game loop
+    while True:
+        current_time = pygame.time.get_ticks()
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                pygame.quit()
+                sys.exit()
 
-            if event.type == pygame.KEYDOWN:
-                if self.state == "menu" and event.key == pygame.K_SPACE:
-                    self.state = "playing"
-                elif self.state == "playing" and event.key == pygame.K_SPACE:
-                    self.player.jump()
-                elif self.state == "game_over" and event.key == pygame.K_SPACE:
-                    self.reset_game()
-                    self.state = "playing"
-                elif event.key == pygame.K_p:
-                    if self.state == "playing":
-                        self.state = "paused"
-                    elif self.state == "paused":
-                        self.state = "playing"
+            if game_state == "start":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        game_state = "playing"
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.state == "menu":
-                    self.state = "playing"
-                elif self.state == "playing":
-                    self.player.jump()
-                elif self.state == "game_over":
-                    self.reset_game()
-                    self.state = "playing"
+            elif game_state == "playing":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        bird.flap()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    bird.flap()
 
-        return True
+            elif game_state == "game_over":
+                restart_button.check_hover(mouse_pos)
+                restart_pressed = restart_button.check_click(mouse_pos, event)
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    restart_pressed = True
+                if restart_pressed:
+                    # Reset game
+                    bird = Bird()
+                    pipes = []
+                    score = 0
+                    last_pipe = current_time
+                    game_state = "playing"
 
-    def update(self):
-        current_time = pygame.time.get_ticks()
+        # Update game objects
+        if game_state == "playing":
+            bird.update()
 
-        # Update player if playing
-        if self.state == "playing":
-            self.player.update()
+            # Generate new pipes
+            if current_time - last_pipe > PIPE_FREQUENCY:
+                pipes.append(Pipe())
+                last_pipe = current_time
 
-            # Check collision with ground
-            if not self.player.alive:
-                self.state = "game_over"
-                if self.score > self.high_score:
-                    self.high_score = self.score
-
-            # Generate pipes
-            if current_time - self.last_pipe_time > PIPE_FREQUENCY:
-                self.pipes.append(Pipe(WIDTH))
-                self.last_pipe_time = current_time
-
-            # Update pipes and check collisions
-            for pipe in self.pipes[:]:
+            # Update pipes
+            for pipe in pipes[:]:
                 pipe.update()
 
-                # Remove off-screen pipes
-                if pipe.x + pipe.width < 0:
-                    self.pipes.remove(pipe)
-                    continue
-
-                # Check collision
-                if pipe.collide(self.player):
-                    self.state = "game_over"
-                    if self.score > self.high_score:
-                        self.high_score = self.score
-
-                # Check if passed pipe
-                if not pipe.passed and pipe.x + pipe.width < self.player.x:
+                # Check if bird passed the pipe
+                if not pipe.passed and pipe.x + PIPE_WIDTH < bird.x:
                     pipe.passed = True
-                    self.score += 1
+                    score += 1
 
-            # Create particles for player movement
-            if current_time % 5 == 0:
-                self.particles.append(Particle(self.player.x - 10, self.player.y))
+                # Check for collisions
+                if pipe.collide(bird):
+                    bird.alive = False
 
-            # Update particles
-            for particle in self.particles[:]:
-                particle.update()
-                if particle.is_dead():
-                    self.particles.remove(particle)
+                # Remove pipes that are off screen
+                if pipe.x + PIPE_WIDTH < 0:
+                    pipes.remove(pipe)
 
-            # Update clouds
-            for cloud in self.clouds:
-                cloud.update()
+            # Check if bird is dead
+            if not bird.alive:
+                game_state = "game_over"
+                if score > high_score:
+                    high_score = score
 
-        # Update particles even when not playing
-        for particle in self.particles[:]:
-            particle.update()
-            if particle.is_dead():
-                self.particles.remove(particle)
+        # Update clouds
+        for cloud in clouds:
+            cloud.update()
 
-    def draw_background(self):
-        # Sky gradient
-        for y in range(0, HEIGHT, 2):
-            color_value = max(0, min(255, int(100 + (y / HEIGHT) * 155)))
-            pygame.draw.line(self.screen, (color_value, min(color_value + 50, 255), 255),
-                        (0, y), (WIDTH, y), 2)
-
-        # Draw sun
-        pygame.draw.circle(self.screen, YELLOW, (700, 80), 50)
-
-        # Draw sun rays
-        for i in range(12):
-            angle = i * 30
-            start_x = 700 + 50 * math.cos(math.radians(angle))
-            start_y = 80 + 50 * math.sin(math.radians(angle))
-            end_x = 700 + 70 * math.cos(math.radians(angle))
-            end_y = 80 + 70 * math.sin(math.radians(angle))
-            pygame.draw.line(self.screen, YELLOW, (start_x, start_y), (end_x, end_y), 3)
-
-    def draw(self):
-        # Clear screen with background
-        self.draw_background()
+        # Drawing
+        draw_background()
 
         # Draw pipes
-        for pipe in self.pipes:
-            pipe.draw(self.screen)
-
-        # Draw particles
-        for particle in self.particles:
-            particle.draw(self.screen)
+        for pipe in pipes:
+            pipe.draw()
 
         # Draw ground
-        pygame.draw.rect(self.screen, BROWN, (0, HEIGHT - GROUND_HEIGHT, WIDTH, GROUND_HEIGHT))
+        draw_ground()
 
-        # Draw grass
-        pygame.draw.rect(self.screen, (0, 150, 0), (0, HEIGHT - GROUND_HEIGHT, WIDTH, 20))
+        # Draw bird
+        bird.draw()
 
-        # Draw ground details
-        for i in range(0, WIDTH, 30):
-            pygame.draw.line(self.screen, (100, 70, 0), (i, HEIGHT - GROUND_HEIGHT + 20),
-                           (i + 15, HEIGHT - GROUND_HEIGHT + 20), 3)
-
-        # Draw player
-        if self.state == "playing" or self.state == "game_over":
-            self.player.draw(self.screen)
-
-        # Draw UI based on state
-        if self.state == "menu":
-            self.draw_menu()
-        elif self.state == "playing":
-            self.draw_game_ui()
-        elif self.state == "paused":
-            self.draw_pause_screen()
-        elif self.state == "game_over":
-            self.draw_game_over()
-
-    def draw_menu(self):
-        # Semi-transparent overlay
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        self.screen.blit(overlay, (0, 0))
-
-        # Title
-        title_text = self.font_large.render("FLIPPYBLOCK EXTREME", True, YELLOW)
-        self.screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, 100))
-
-        # Instructions
-        instructions = [
-            "Press SPACE or CLICK to flap",
-            "Avoid pipes and don't hit the ground",
-            "Press SPACE to start"
-        ]
-
-        for i, line in enumerate(instructions):
-            text = self.font_small.render(line, True, WHITE)
-            self.screen.blit(text, (WIDTH//2 - text.get_width()//2, 250 + i * 50))
-
-        # High score
-        high_score_text = self.font_medium.render(f"High Score: {self.high_score}", True, YELLOW)
-        self.screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, 450))
-
-    def draw_game_ui(self):
         # Draw score
-        score_text = self.font_medium.render(f"Score: {self.score}", True, WHITE)
-        self.screen.blit(score_text, (20, 20))
+        if game_state == "playing" or game_state == "game_over":
+            draw_score(score, high_score)
 
-        # Draw high score
-        high_score_text = self.font_medium.render(f"High Score: {self.high_score}", True, WHITE)
-        self.screen.blit(high_score_text, (20, 70))
+        # Draw screens
+        if game_state == "start":
+            draw_start_screen()
+        elif game_state == "game_over":
+            draw_game_over(score, high_score, restart_button)
 
-    def draw_pause_screen(self):
-        # Semi-transparent overlay
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150))
-        self.screen.blit(overlay, (0, 0))
+        pygame.display.flip()
+        clock.tick(FPS)
 
-        # Pause text
-        pause_text = self.font_large.render("PAUSED", True, YELLOW)
-        self.screen.blit(pause_text, (WIDTH//2 - pause_text.get_width()//2, HEIGHT//2 - 50))
-
-        # Continue instructions
-        continue_text = self.font_small.render("Press P to continue", True, WHITE)
-        self.screen.blit(continue_text, (WIDTH//2 - continue_text.get_width()//2, HEIGHT//2 + 50))
-
-    def draw_game_over(self):
-        # Semi-transparent overlay
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150))
-        self.screen.blit(overlay, (0, 0))
-
-        # Game over text
-        game_over_text = self.font_large.render("GAME OVER", True, RED)
-        self.screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//2 - 100))
-
-        # Score
-        score_text = self.font_medium.render(f"Score: {self.score}", True, WHITE)
-        self.screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2))
-
-        # High score
-        high_score_text = self.font_medium.render(f"High Score: {self.high_score}", True, WHITE)
-        self.screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 50))
-
-        # Restart instructions
-        restart_text = self.font_small.render("Press SPACE or CLICK to restart", True, WHITE)
-        self.screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 120))
-
-    def run(self):
-        running = True
-        while running:
-            running = self.handle_events()
-            self.update()
-            self.draw()
-            pygame.display.flip()
-            self.clock.tick(FPS)
-
-        pygame.quit()
-        sys.exit()
-
-# Create and run the game
 if __name__ == "__main__":
-    game = Game()
-    game.run()
+    main()

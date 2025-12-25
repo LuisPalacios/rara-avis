@@ -36,11 +36,21 @@ This game was created as an experiment in AI-assisted game development. The enti
 - [LM Studio](https://lmstudio.ai/) v0.3.36
 - Model: [Qwen3-Coder-30B-A3B-Instruct-MLX-8bit](https://huggingface.co/lmstudio-community/Qwen3-Coder-30B-A3B-Instruct-MLX-8bit) (MLX optimized for Apple Silicon)
 
+### Performance
+
+The local LLM achieved excellent performance during code generation:
+
+| Metric | Value |
+| ------ | ----- |
+| Generation Speed | **51.28 tok/sec** |
+| Total Tokens | 3,580 |
+| Time to First Token | 0.71s |
+
 ### Prompt
 
 This was the initial prompt that I used. The game worked with some issues on the graphics, like leaving trails, but with few additional prompts I was able to get it finished.
 
-> You are an expert Python Developer. Create a highly accurate flappybird game clone called flippyblock extreme in python. Add all additional features that would be expected in a common user interface. Do not use external assets for anything. If you need assets created, generate them in the code only. Only use pygame. Fully review your code and correct any issues after you produce the first version.
+> You are an expert Python Developer. Create a highly accurate flappybird game clone called "Rara Avis" in python. Add all additional features that would be expected in a common user interface. Do not use external assets for anything. If you need assets created, generate them in the code only. Only use pygame. Fully review your code and correct any issues after you produce the first version. Make sure the bird doesn't leave any trail while moving.
 
 ## Controls
 
