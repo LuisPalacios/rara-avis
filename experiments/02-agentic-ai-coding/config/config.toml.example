@@ -1,5 +1,5 @@
 # Mistral Vibe configuration for LM Studio
-# 
+#
 # Copy this file to one of these locations:
 #   - Linux/macOS: ~/.config/mistral-vibe/config.toml
 #   - Windows: %USERPROFILE%\.config\mistral-vibe\config.toml

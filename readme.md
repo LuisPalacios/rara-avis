@@ -32,7 +32,7 @@ A fully playable **Flappy Bird clone** generated entirely by a local LLM with no
 - 100% AI-generated Python/Pygame code
 - Procedural graphics (no external assets)
 - Generated in seconds at 51 tokens/sec
-- Model: Qwen3-Coder-30B-A3B (MLX 8-bit)
+- Model: Qwen3-Coder-30B-A3B (MLX 8-bit) - Running locally via LM Studio
 
 👉 [Full details →](./experiments/01-rara-avis-game/)
 
@@ -43,10 +43,12 @@ A fully playable **Flappy Bird clone** generated entirely by a local LLM with no
 Exploring **agentic coding assistants** that can autonomously explore and modify codebases.
 
 **Tools:**
+
 - [Mistral Vibe CLI](https://docs.mistral.ai/mistral-vibe/introduction) — Command-line coding assistant
 - [Devstral](https://huggingface.co/mistralai/Devstral-Small-2412) (24B) — Running locally via LM Studio
 
 **Goals:**
+
 - Configure Vibe to use local Devstral over LAN
 - Test autonomous code generation and refactoring
 - Compare local vs cloud model performance
@@ -58,7 +60,7 @@ Exploring **agentic coding assistants** that can autonomously explore and modify
 ## Hardware Setup
 
 | Machine | Role | Specs |
-|---------|------|-------|
+| ------- | ---- | ----- |
 | Mac Mini Pro | LLM Server (LM Studio) | Apple Silicon, 64GB RAM |
 | Windows PC | Development Client | Connected via LAN |
 
@@ -68,11 +70,6 @@ Exploring **agentic coding assistants** that can autonomously explore and modify
 # Clone the repository
 git clone https://github.com/LuisPalacios/rara-avis
 cd rara-avis
-
-# Navigate to an experiment
-cd experiments/01-rara-avis-game
-# or
-cd experiments/02-agentic-ai-coding
 
 # Follow the README in each experiment folder
 ```
