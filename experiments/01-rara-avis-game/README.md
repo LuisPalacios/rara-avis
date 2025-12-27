@@ -31,27 +31,9 @@ This game was created as an **experiment in AI-assisted software development**. 
 
 This experiment uses a **two-machine setup**:
 
-```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│                                                                            │
-│  ┌─────────────────────────────┐       ┌─────────────────────────────┐     │
-│  │     MAC MINI PRO            │       │     WINDOWS PC              │     │
-│  │     (LLM + Code Generation) │       │     (Run the Game)          │     │
-│  │                             │       │                             │     │
-│  │  ┌───────────────────────┐  │       │  ┌───────────────────────┐  │     │
-│  │  │      LM Studio        │  │ copy  │  │   Python + Pygame     │  │     │
-│  │  │                       │  │ code  │  │                       │  │     │
-│  │  │  ┌─────────────────┐  │  │ ───►  │  │   rara-avis.py        │  │     │
-│  │  │  │  Qwen3-Coder    │  │  │       │  │                       │  │     │
-│  │  │  │  (30B, MLX)     │  │  │       │  └───────────────────────┘  │     │
-│  │  │  └─────────────────┘  │  │       │                             │     │
-│  │  │                       │  │       │                             │     │
-│  │  │  Built-in Chat UI     │  │       │                             │     │
-│  │  └───────────────────────┘  │       └─────────────────────────────┘     │
-│  └─────────────────────────────┘                                           │
-│                                                                            │
-└────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center" width="100%">
+    <img width="60%" src="./assets/rara-avis-03.svg" alt="Architecture">
+</p>
 
 | Machine | Role | What runs there |
 | ------- | ---- | --------------- |
