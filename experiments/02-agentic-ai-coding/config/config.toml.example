@@ -1,0 +1,38 @@
+# Mistral Vibe configuration for LM Studio
+# 
+# Copy this file to one of these locations:
+#   - Linux/macOS: ~/.config/mistral-vibe/config.toml
+#   - Windows: %USERPROFILE%\.config\mistral-vibe\config.toml
+#
+# Then edit the base_url to match your Mac's IP address.
+
+[provider]
+# Use OpenAI-compatible API mode (works with LM Studio, Ollama, etc.)
+type = "openai_compatible"
+
+# Your Mac's IP address on the LAN
+# Find it in LM Studio > Developer > Local Server
+# Or run: ipconfig getifaddr en0 (on Mac)
+base_url = "http://192.168.1.100:1234/v1"
+
+# LM Studio ignores this but it's required by the OpenAI client
+api_key = "lm-studio"
+
+# Model name exactly as shown in LM Studio
+# Check the model dropdown in LM Studio for the exact name
+model = "devstral-small-2-24b-instruct-2512"
+
+[ui]
+# Theme options: dark, light, dracula, monokai, gruvbox, etc.
+theme = "dark"
+
+[tools]
+# Require approval before executing shell commands (recommended)
+require_approval = true
+
+# Allow file operations
+allow_file_write = true
+allow_file_read = true
+
+# Allow shell command execution
+allow_shell = true
