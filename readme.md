@@ -69,7 +69,15 @@ This was the initial prompt ([source](https://digitalspaceport.com/about/testing
 **Install Python 3.13**:
 
 ```bash
+# Linux
+apt install python3.12
+apt install python3.12-venv
+
+# MacOS
 brew install python@3.13
+
+# Windows
+# Instala desde https://www.python.org/downloads/windows/
 ```
 
 ### Setup
@@ -77,22 +85,32 @@ brew install python@3.13
 ```bash
 git clone https://github.com/LuisPalacios/rara-avis
 cd rara-avis
+
+# Linux
+python3 -m venv .venv
+source .venv/bin/activate
+
+# MacOS
 /opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
 
-# Instalación de Pygame manualmente
-python -m pip install -U pygame
+# Windows
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-# Alternativa:
+# Instalación de las dependencias - solo es "Pygame"
 pip install -r requirements.txt
-
 ```
 
 ### Run
 
 ```bash
 cd rara-avis
+# MacOS/Linux
 source .venv/bin/activate
+# Windows
+.\.venv\Scripts\Activate.ps1
+
 python rara-avis.py
 ```
 
@@ -106,4 +124,3 @@ Game control:
 ## License
 
 This project is provided as-is for educational and experimental purposes.
-
