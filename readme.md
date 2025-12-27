@@ -66,7 +66,7 @@ This was the initial prompt ([source](https://digitalspaceport.com/about/testing
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-**Install Python 3.13**:
+**Install Python**:
 
 ```bash
 # Linux
@@ -77,7 +77,7 @@ apt install python3.12-venv
 brew install python@3.13
 
 # Windows
-# Instala desde https://www.python.org/downloads/windows/
+# Install 3.13 stable from https://www.python.org/downloads/windows/
 ```
 
 ### Setup
@@ -98,7 +98,7 @@ source .venv/bin/activate
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# Instalación de las dependencias - solo es "Pygame"
+# Install dependencies (only "Pygame")
 pip install -r requirements.txt
 ```
 
