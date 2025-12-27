@@ -32,7 +32,7 @@ This game was created as an **experiment in AI-assisted software development**. 
 This experiment uses a **two-machine setup**:
 
 <p align="center" width="100%">
-    <img width="60%" src="./assets/rara-avis-03.svg" alt="Architecture">
+    <img width="90%" src="./assets/rara-avis-03.svg" alt="Architecture">
 </p>
 
 | Machine | Role | What runs there |
