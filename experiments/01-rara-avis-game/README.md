@@ -104,7 +104,7 @@ This was the initial prompt ([source](https://digitalspaceport.com/about/testing
    - Select `Qwen3-Coder-30B-A3B-Instruct-MLX-8bit`
    - Wait for the model to load into memory (watch the RAM usage)
 
-> **💡 No IDE needed!** LM Studio has a built-in Chat interface. You interact with the LLM directly in the Chat tab — just type your prompt and copy the generated code.
+> **💡 No IDE needed!** LM Studio has a built-in Chat interface. I just interacted with the LLM directly in the Chat tab — just typed the prompt and copied the generated code to create `rara-avis.py`.
 
 #### On the Windows PC (Development Workstation)
 
@@ -194,4 +194,4 @@ If you want to generate the game yourself:
 1. **Local LLMs are capable**: A quantized 30B model can generate functional game code in seconds
 2. **Iterative prompting works**: Initial output had bugs, but follow-up prompts fixed them quickly
 3. **No external assets needed**: Procedural graphics are good enough for prototypes
-4. **LM Studio Chat is sufficient**: No need for complex IDE integrations for simple projects
+4. **LM Studio Chat is sufficient**: No need for complex IDE integrations for simple projects.
