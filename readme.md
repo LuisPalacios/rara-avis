@@ -79,7 +79,13 @@ git clone https://github.com/LuisPalacios/rara-avis
 cd rara-avis
 /opt/homebrew/bin/python3.13 -m venv .venv
 source .venv/bin/activate
+
+# Instalación de Pygame manualmente
 python -m pip install -U pygame
+
+# Alternativa:
+pip install -r requirements.txt
+
 ```
 
 ### Run
