@@ -74,3 +74,14 @@ venv.bak/
 # Thumbnails
 ._*
 
+# Claude Code
+.claude/*.local.*
+tmpclaude-*-cwd
+
+#
+# Virtual environments
+# Created by skills with script dependencies (e.g., fixing-markdown)
+#
+.claude/_tooling/.venv/
+.claude/_tooling/node_modules/
+.claude/_tooling/package-lock.json
